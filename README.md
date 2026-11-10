@@ -17,7 +17,8 @@ Somente este backend chama a API externa. O frontend consome apenas esta API.
 ## Pré-requisitos
 
 - Node.js 24+
-- Docker e Docker Compose (recomendado para Postgres + Redis)
+- Docker e Docker Compose (opcional; sobe API + Redis — **sem** Postgres local)
+- Postgres gerenciado (Neon, Vercel Postgres, Supabase, etc.) para Prisma/auth
 - npm
 
 ## Configuração
@@ -38,7 +39,7 @@ Ajuste os valores do `.env`. Variáveis importantes:
 | `REDIS_HOST` / `REDIS_PORT` | Sim | Conexão Redis |
 | `EPISODES_CACHE_TTL_SECONDS` | Não (default 3600) | TTL do cache de episódios |
 | `CHARACTERS_CACHE_TTL_SECONDS` | Não (default 3600) | TTL do cache de personagens |
-| `DATABASE_URL` | Sim | Postgres via Prisma |
+| `DATABASE_URL` | Sim | Postgres externo via Prisma (não use o Postgres do Docker; está comentado) |
 | `CORS_ORIGINS` | Recomendado em prod | Origens permitidas, separadas por vírgula |
 | `PORT` | Não (default 3000) | Porta HTTP |
 
@@ -53,8 +54,11 @@ npm run docker:up
 Sobe:
 
 - API em `http://localhost:3000`
-- Postgres (host `1515` → container `5432`)
 - Redis
+
+**Postgres no Compose está comentado.** Configure `DATABASE_URL` no `.env` apontando para um banco externo antes de subir a API.
+
+Para reativar o Postgres local no Docker, descomente `x-db-base`, `db-dev`/`db`, o volume `pg_data` e os `depends_on` de banco em `docker-compose.yml`.
 
 Outros comandos:
 
@@ -64,19 +68,19 @@ npm run docker:ps
 npm run docker:down
 ```
 
-Prisma no container:
+Prisma (contra o banco externo):
 
 ```bash
-npm run prisma:generate:docker
-npm run prisma:migrate:docker -- --name init
-npm run prisma:studio
+npx prisma generate
+npx prisma migrate deploy
+# ou, em desenvolvimento:
+npx prisma migrate dev
 ```
 
 ## Subir localmente
 
-1. Garanta Postgres e Redis acessíveis (ou use só os serviços do Compose).
-2. Configure o `.env` (em local, `REDIS_HOST=localhost` e Postgres publicado em `1515`, se usar o Compose).
-3. Instale e rode:
+1. Configure `DATABASE_URL` (Postgres gerenciado) e Redis (`REDIS_HOST=localhost` se o Redis vier do Compose).
+2. Instale e rode:
 
 ```bash
 npm install

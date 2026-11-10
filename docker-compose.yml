@@ -2,7 +2,8 @@ x-api-base: &api-base
   env_file:
     - .env
   environment:
-    DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+    # Use DATABASE_URL do .env (banco externo / managed). Não sobe Postgres no Compose.
+    # DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
     REDIS_HOST: ${REDIS_HOST}
     REDIS_PORT: ${REDIS_PORT:-6379}
     EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
@@ -10,24 +11,25 @@ x-api-base: &api-base
     - app_net
   restart: unless-stopped
 
-x-db-base: &db-base
-  image: postgres:16-alpine
-  env_file:
-    - .env
-  environment:
-    POSTGRES_DB: ${POSTGRES_DB}
-    POSTGRES_USER: ${POSTGRES_USER}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  volumes:
-    - pg_data:/var/lib/postgresql/data
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-    interval: 5s
-    timeout: 3s
-    retries: 10
-  restart: unless-stopped
-  networks:
-    - app_net
+# Postgres no Docker (desabilitado — preferir banco gerenciado, ex.: Neon/Vercel Postgres)
+# x-db-base: &db-base
+#   image: postgres:16-alpine
+#   env_file:
+#     - .env
+#   environment:
+#     POSTGRES_DB: ${POSTGRES_DB}
+#     POSTGRES_USER: ${POSTGRES_USER}
+#     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#   volumes:
+#     - pg_data:/var/lib/postgresql/data
+#   healthcheck:
+#     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+#     interval: 5s
+#     timeout: 3s
+#     retries: 10
+#   restart: unless-stopped
+#   networks:
+#     - app_net
 
 x-redis-base: &redis-base
   image: redis:7-alpine
@@ -51,7 +53,7 @@ services:
       target: dev
     command: sh -c "npm install && npx prisma generate && npm run start:dev"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      # DATABASE_URL vem do env_file (.env) — banco externo
       REDIS_HOST: ${REDIS_HOST:-redis-dev}
       REDIS_PORT: ${REDIS_PORT:-6379}
       EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
@@ -64,8 +66,8 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      db-dev:
-        condition: service_healthy
+      # db-dev:
+      #   condition: service_healthy
       redis-dev:
         condition: service_healthy
     profiles:
@@ -77,7 +79,7 @@ services:
       context: .
       target: prod
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      # DATABASE_URL vem do env_file (.env) — banco externo
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
@@ -85,8 +87,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      db:
-        condition: service_healthy
+      # db:
+      #   condition: service_healthy
       redis:
         condition: service_healthy
     profiles:
@@ -98,7 +100,7 @@ services:
       context: .
       target: prod
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      # DATABASE_URL vem do env_file (.env) — banco externo
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
@@ -109,25 +111,25 @@ services:
     tmpfs:
       - /tmp
     depends_on:
-      db:
-        condition: service_healthy
+      # db:
+      #   condition: service_healthy
       redis:
         condition: service_healthy
     profiles:
       - prod
 
-  db-dev:
-    <<: *db-base
-    ports:
-      - "1515:5432"
-    profiles:
-      - dev
+  # db-dev:
+  #   <<: *db-base
+  #   ports:
+  #     - "1515:5432"
+  #   profiles:
+  #     - dev
 
-  db:
-    <<: *db-base
-    profiles:
-      - staging
-      - prod
+  # db:
+  #   <<: *db-base
+  #   profiles:
+  #     - staging
+  #     - prod
 
   redis-dev:
     <<: *redis-base
@@ -146,5 +148,5 @@ networks:
   app_net:
 
 volumes:
-  pg_data:
+  # pg_data:
   redis_data:

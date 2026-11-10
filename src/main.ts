@@ -3,11 +3,11 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import cookieParser from 'cookie-parser';
-import { doubleCsrf } from 'csrf-csrf';
+// import { doubleCsrf } from 'csrf-csrf';
 import compression from 'compression';
 import helmet from 'helmet';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { isCsrfEnabled, requireCsrfSecret } from './config/security-secrets';
+// import { isCsrfEnabled, requireCsrfSecret } from './config/security-secrets';
 function buildCorsOptions(): CorsOptions {
   const isProd = process.env.NODE_ENV === 'production';
   const allowedList =
@@ -68,24 +68,26 @@ async function bootstrap() {
     }),
   );
   app.use(cookieParser());
-  const csrfEnabled = isCsrfEnabled();
-  if (csrfEnabled) {
-    const csrfSecret = requireCsrfSecret();
-    const { doubleCsrfProtection } = doubleCsrf({
-      getSecret: () => csrfSecret,
-      getSessionIdentifier: (req) => req.ip ?? 'anonymous-session',
-      cookieName: '__Host-psifi.x-csrf-token',
-      cookieOptions: {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    });
-    app.use(doubleCsrfProtection);
-    console.log('✓ CSRF Protection enabled');
-  } else {
-    console.warn('⚠ CSRF Protection disabled (development mode)');
-  }
+  // CSRF desligado junto com Auth/Users (Prisma off)
+  // const csrfEnabled = isCsrfEnabled();
+  // if (csrfEnabled) {
+  //   const csrfSecret = requireCsrfSecret();
+  //   const { doubleCsrfProtection } = doubleCsrf({
+  //     getSecret: () => csrfSecret,
+  //     getSessionIdentifier: (req) => req.ip ?? 'anonymous-session',
+  //     cookieName: '__Host-psifi.x-csrf-token',
+  //     cookieOptions: {
+  //       httpOnly: true,
+  //       sameSite: 'strict',
+  //       secure: process.env.NODE_ENV === 'production',
+  //     },
+  //   });
+  //   app.use(doubleCsrfProtection);
+  //   console.log('✓ CSRF Protection enabled');
+  // } else {
+  //   console.warn('⚠ CSRF Protection disabled (development mode)');
+  // }
+  console.warn('⚠ CSRF Protection disabled (Auth/Prisma off)');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({

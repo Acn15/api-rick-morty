@@ -8,7 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 // import { AuthModule } from './auth/auth.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
-import { validateSecuritySecrets } from './config/security-secrets';
+// import { validateSecuritySecrets } from './config/security-secrets';
 import { RickAndMortyModule } from './integrations/rick-and-morty/rick-and-morty.module';
 import { EpisodesModule } from './episodes/episodes.module';
 import { CharactersModule } from './characters/characters.module';
@@ -16,7 +16,8 @@ import { CharactersModule } from './characters/characters.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      validate: validateSecuritySecrets,
+      // Auth/Users desligados — não exigir JWT/CSRF no boot
+      // validate: validateSecuritySecrets,
     }),
     HealthModule,
     // Prisma/Postgres + auth/users desligados (sem DATABASE_URL em produção)

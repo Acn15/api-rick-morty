@@ -4,9 +4,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheService } from './cache.service';
 import { createRedisKeyv } from './create-redis-keyv';
 
-function buildRedisUrl(configService: ConfigService): string {
-  const host = configService.getOrThrow<string>('REDIS_HOST');
-  const port = configService.getOrThrow<string>('REDIS_PORT');
+function buildRedisUrl(configService: ConfigService): string | undefined {
+  const host = configService.get<string>('REDIS_HOST');
+  const port = configService.get<string>('REDIS_PORT') ?? '6379';
+  if (!host) {
+    return undefined;
+  }
   const password = configService.get<string>('REDIS_PASSWORD');
   const useTls = configService.get<string>('REDIS_TLS') === 'true';
   const scheme = useTls ? 'rediss' : 'redis';
@@ -27,6 +30,12 @@ function buildRedisUrl(configService: ConfigService): string {
           configService.get<string>('REDIS_URL') ??
           configService.get<string>('KV_URL') ??
           buildRedisUrl(configService);
+        if (!redisUrl) {
+          logger.warn(
+            'Redis não configurado (REDIS_URL/KV_URL/REDIS_HOST). Cache em memória.',
+          );
+          return { stores: [] };
+        }
         const redisStore = createRedisKeyv(redisUrl);
         redisStore.on('error', (error: Error) => {
           logger.warn(`Redis indisponível: ${error.message}`);

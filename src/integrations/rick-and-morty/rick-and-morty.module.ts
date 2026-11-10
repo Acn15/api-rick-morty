@@ -9,7 +9,8 @@ import { RickAndMortyService } from './rick-and-morty.service';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) =>
         createRickAndMortyHttpConfig(
-          configService.getOrThrow<string>('RICK_AND_MORTY_API_BASE_URL'),
+          configService.get<string>('RICK_AND_MORTY_API_BASE_URL') ??
+            'https://rickandmortyapi.com/api',
         ),
       inject: [ConfigService],
     }),

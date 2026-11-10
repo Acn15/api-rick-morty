@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
-import { PrismaModule } from './prisma/prisma.module';
+// import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
+// import { UsersModule } from './users/users.module';
+// import { AuthModule } from './auth/auth.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { validateSecuritySecrets } from './config/security-secrets';
@@ -19,9 +19,10 @@ import { CharactersModule } from './characters/characters.module';
       validate: validateSecuritySecrets,
     }),
     HealthModule,
-    PrismaModule,
-    AuthModule,
-    UsersModule,
+    // Prisma/Postgres + auth/users desligados (sem DATABASE_URL em produção)
+    // PrismaModule,
+    // AuthModule,
+    // UsersModule,
     RickAndMortyModule,
     EpisodesModule,
     CharactersModule,

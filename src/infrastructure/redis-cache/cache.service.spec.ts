@@ -1,78 +1,64 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from './cache.service';
+
 describe('CacheService', () => {
   let service: CacheService;
-  let cacheManager: {
-    get: jest.Mock;
-    set: jest.Mock;
-  };
+
   beforeEach(async () => {
-    cacheManager = {
-      get: jest.fn(),
-      set: jest.fn(),
-    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheService,
         {
-          provide: CACHE_MANAGER,
-          useValue: cacheManager,
+          provide: ConfigService,
+          useValue: {
+            get: () => undefined,
+          },
         },
       ],
     }).compile();
     service = module.get<CacheService>(CacheService);
   });
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+
+  it('should fall back to memory when redis env is absent', () => {
+    expect(service.getBackend()).toBe('memory');
   });
-  it('should inject CACHE_MANAGER token', () => {
-    expect(cacheManager).toBeDefined();
-  });
-  it('should return cached value on get', async () => {
-    cacheManager.get.mockResolvedValue({ id: 1 });
-    await expect(
-      service.get<{
-        id: number;
-      }>('key'),
-    ).resolves.toEqual({
+
+  it('should round-trip values in memory', async () => {
+    await service.set('key', { id: 1 }, 60);
+    await expect(service.get<{ id: number }>('key')).resolves.toEqual({
       id: 1,
     });
-    expect(cacheManager.get).toHaveBeenCalledWith('key');
   });
-  it('should unwrap Keyv { value, expires } envelope on get', async () => {
-    cacheManager.get.mockResolvedValue({
-      value: { id: 16, name: 'Get Schwifty' },
-      expires: Date.now() + 60000,
-    });
-    await expect(
-      service.get<{
-        id: number;
-        name: string;
-      }>('episodes:16:characters'),
-    ).resolves.toEqual({ id: 16, name: 'Get Schwifty' });
-  });
-  it('should return undefined when Redis read fails', async () => {
-    cacheManager.get.mockRejectedValue(new Error('Redis down'));
+
+  it('should skip invalid ttl', async () => {
+    await service.set('key', { ok: true }, 0);
     await expect(service.get('key')).resolves.toBeUndefined();
   });
-  it('should convert ttl from seconds to milliseconds on set', async () => {
-    cacheManager.set.mockResolvedValue(undefined);
-    await service.set('key', { ok: true }, 3600);
-    expect(cacheManager.set).toHaveBeenCalledWith(
-      'key',
-      { ok: true },
-      3600 * 1000,
-    );
-  });
-  it('should not call Redis when ttl is invalid', async () => {
-    await service.set('key', { ok: true }, Number.NaN);
-    await service.set('key', { ok: true }, 0);
-    await service.set('key', { ok: true }, -10);
-    expect(cacheManager.set).not.toHaveBeenCalled();
-  });
-  it('should swallow Redis write failures', async () => {
-    cacheManager.set.mockRejectedValue(new Error('Redis down'));
-    await expect(service.set('key', { ok: true }, 60)).resolves.toBeUndefined();
+});
+
+describe('CacheService upstash-rest', () => {
+  it('should select upstash-rest when KV REST env is set', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CacheService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) => {
+              if (key === 'KV_REST_API_URL') {
+                return 'https://example.upstash.io';
+              }
+              if (key === 'KV_REST_API_TOKEN') {
+                return 'token';
+              }
+              return undefined;
+            },
+          },
+        },
+      ],
+    }).compile();
+    const service = module.get<CacheService>(CacheService);
+    expect(service.getBackend()).toBe('upstash-rest');
   });
 });

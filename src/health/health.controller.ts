@@ -1,36 +1,17 @@
 import { Controller, Get } from '@nestjs/common';
-// import {
-//   HealthCheckService,
-//   HttpHealthIndicator,
-//   HealthCheck,
-//   HealthCheckResult,
-//   // HealthIndicatorResult,
-// } from '@nestjs/terminus';
 import { Public } from '../common/decorators/public.decorator';
-// import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../infrastructure/redis-cache/cache.service';
+
 @Controller('health')
 @Public()
 export class HealthController {
-  // constructor(
-  //   private readonly healthCheckService: HealthCheckService,
-  //   private readonly httpHealthIndicator: HttpHealthIndicator,
-  //   // private readonly prismaService: PrismaService,
-  // ) {}
+  constructor(private readonly cacheService: CacheService) {}
+
   @Get()
-  // @HealthCheck()
-  check(): { status: string } {
-    return { status: 'ok' };
-    // return this.healthCheckService.check([
-    //   () =>
-    //     this.httpHealthIndicator.pingCheck(
-    //       'nestjs-docs',
-    //       'https://docs.nestjs.com',
-    //     ),
-    //   // async () => this.checkDatabase(),
-    // ]);
+  check(): { status: string; cache: string } {
+    return {
+      status: 'ok',
+      cache: this.cacheService.getBackend(),
+    };
   }
-  // private async checkDatabase(): Promise<HealthIndicatorResult> {
-  //   await this.prismaService.healthCheck();
-  //   return { database: { status: 'up' } };
-  // }
 }

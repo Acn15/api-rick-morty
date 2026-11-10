@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ErrorResponse } from '../interfaces/error-response.interface';
-import { Prisma } from '@prisma/client';
+// import { Prisma } from '@prisma/client';
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -30,9 +30,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       return this.handleHttpException(exception, timestamp, path, method);
     }
-    if (this.isPrismaError(exception)) {
-      return this.handlePrismaError(exception, timestamp, path, method);
-    }
+    // Prisma desligado — handlers comentados
+    // if (this.isPrismaError(exception)) {
+    //   return this.handlePrismaError(exception, timestamp, path, method);
+    // }
     return this.handleGenericError(exception, timestamp, path, method);
   }
   private handleHttpException(
@@ -67,77 +68,77 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }),
     };
   }
-  private handlePrismaError(
-    exception: Prisma.PrismaClientKnownRequestError,
-    timestamp: string,
-    path: string,
-    method: string,
-  ): ErrorResponse {
-    const { code, meta } = exception;
-    switch (code) {
-      case 'P2002':
-        return {
-          statusCode: HttpStatus.CONFLICT,
-          timestamp,
-          path,
-          method,
-          message: 'Registro duplicado. Já existe um registro com esses dados.',
-          error: 'Conflict',
-          ...(process.env.NODE_ENV !== 'production' && {
-            details: { code, meta },
-          }),
-        };
-      case 'P2025':
-        return {
-          statusCode: HttpStatus.NOT_FOUND,
-          timestamp,
-          path,
-          method,
-          message: 'Registro não encontrado.',
-          error: 'Not Found',
-          ...(process.env.NODE_ENV !== 'production' && {
-            details: { code, meta },
-          }),
-        };
-      case 'P2003':
-        return {
-          statusCode: HttpStatus.BAD_REQUEST,
-          timestamp,
-          path,
-          method,
-          message: 'Violação de chave estrangeira.',
-          error: 'Bad Request',
-          ...(process.env.NODE_ENV !== 'production' && {
-            details: { code, meta },
-          }),
-        };
-      case 'P2014':
-        return {
-          statusCode: HttpStatus.BAD_REQUEST,
-          timestamp,
-          path,
-          method,
-          message:
-            'Violação de relação. Não é possível realizar esta operação.',
-          error: 'Bad Request',
-          ...(process.env.NODE_ENV !== 'production' && {
-            details: { code, meta },
-          }),
-        };
-      default:
-        return {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          timestamp,
-          path,
-          method,
-          message: 'Erro ao processar a requisição no banco de dados.',
-          error: 'Database Error',
-          ...(process.env.NODE_ENV !== 'production' && {
-            details: { code, meta, message: exception.message },
-          }),
-        };
-    }
-  }
+  // private handlePrismaError(
+  //   exception: Prisma.PrismaClientKnownRequestError,
+  //   timestamp: string,
+  //   path: string,
+  //   method: string,
+  // ): ErrorResponse {
+  //   const { code, meta } = exception;
+  //   switch (code) {
+  //     case 'P2002':
+  //       return {
+  //         statusCode: HttpStatus.CONFLICT,
+  //         timestamp,
+  //         path,
+  //         method,
+  //         message: 'Registro duplicado. Já existe um registro com esses dados.',
+  //         error: 'Conflict',
+  //         ...(process.env.NODE_ENV !== 'production' && {
+  //           details: { code, meta },
+  //         }),
+  //       };
+  //     case 'P2025':
+  //       return {
+  //         statusCode: HttpStatus.NOT_FOUND,
+  //         timestamp,
+  //         path,
+  //         method,
+  //         message: 'Registro não encontrado.',
+  //         error: 'Not Found',
+  //         ...(process.env.NODE_ENV !== 'production' && {
+  //           details: { code, meta },
+  //         }),
+  //       };
+  //     case 'P2003':
+  //       return {
+  //         statusCode: HttpStatus.BAD_REQUEST,
+  //         timestamp,
+  //         path,
+  //         method,
+  //         message: 'Violação de chave estrangeira.',
+  //         error: 'Bad Request',
+  //         ...(process.env.NODE_ENV !== 'production' && {
+  //           details: { code, meta },
+  //         }),
+  //       };
+  //     case 'P2014':
+  //       return {
+  //         statusCode: HttpStatus.BAD_REQUEST,
+  //         timestamp,
+  //         path,
+  //         method,
+  //         message:
+  //           'Violação de relação. Não é possível realizar esta operação.',
+  //         error: 'Bad Request',
+  //         ...(process.env.NODE_ENV !== 'production' && {
+  //           details: { code, meta },
+  //         }),
+  //       };
+  //     default:
+  //       return {
+  //         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         timestamp,
+  //         path,
+  //         method,
+  //         message: 'Erro ao processar a requisição no banco de dados.',
+  //         error: 'Database Error',
+  //         ...(process.env.NODE_ENV !== 'production' && {
+  //           details: { code, meta, message: exception.message },
+  //         }),
+  //       };
+  //   }
+  // }
   private handleGenericError(
     exception: unknown,
     timestamp: string,
@@ -160,26 +161,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }),
     };
   }
-  private isPrismaError(
-    exception: unknown,
-  ): exception is Prisma.PrismaClientKnownRequestError {
-    return (
-      exception instanceof Prisma.PrismaClientKnownRequestError ||
-      (typeof exception === 'object' &&
-        exception !== null &&
-        'code' in exception &&
-        typeof (
-          exception as {
-            code: unknown;
-          }
-        ).code === 'string' &&
-        (
-          exception as {
-            code: string;
-          }
-        ).code.startsWith('P'))
-    );
-  }
+  // private isPrismaError(
+  //   exception: unknown,
+  // ): exception is Prisma.PrismaClientKnownRequestError {
+  //   return (
+  //     exception instanceof Prisma.PrismaClientKnownRequestError ||
+  //     (typeof exception === 'object' &&
+  //       exception !== null &&
+  //       'code' in exception &&
+  //       typeof (
+  //         exception as {
+  //           code: unknown;
+  //         }
+  //       ).code === 'string' &&
+  //       (
+  //         exception as {
+  //           code: string;
+  //         }
+  //       ).code.startsWith('P'))
+  //   );
+  // }
   private logError(
     exception: unknown,
     request: Request,

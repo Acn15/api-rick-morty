@@ -96,7 +96,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  const port = Number(process.env.PORT ?? 3000);
-  await app.listen(port, '0.0.0.0');
+  // Vercel captura listen(PORT) — NÃO passar host (ex.: 0.0.0.0), senão a function quebra
+  await app.listen(process.env.PORT ?? 3000);
 }
-void bootstrap();
+bootstrap();

@@ -166,7 +166,7 @@ Controller → Service (domínio) → RickAndMortyService (HTTP) + CacheService 
 - `episodes:search:v1:name:{name}:page:{page}`
 - `episodes:search:v1:id:{id}`
 - `episodes:{id}:characters`
-- `characters:list:v1:page:{page}:...filtros`
+- `characters:list:v2:page:{page}:...filtros`
 - `characters:detail:v2:id:{id}`
 
 Respostas inválidas ou erros de integração **não** são cacheados.

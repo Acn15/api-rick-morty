@@ -182,6 +182,46 @@ describe('CharactersService', () => {
       expect(result.info).not.toHaveProperty('prev');
       expect(rickAndMortyService.getEpisodesByIds).not.toHaveBeenCalled();
     });
+    it('should return list characters sorted by name case-insensitively and by id on ties', async () => {
+      cacheService.get.mockResolvedValue(undefined);
+      const unsortedCharacters: RickAndMortyCharacter[] = [
+        {
+          ...character,
+          id: 2,
+          name: 'morty smith',
+          origin: { name: 'unknown', url: '' },
+          location: { name: 'Citadel of Ricks', url: '' },
+          image: '',
+        },
+        {
+          ...character,
+          id: 1,
+          name: 'Rick Sanchez',
+          origin: { name: 'Earth', url: '' },
+          location: { name: 'Citadel of Ricks', url: '' },
+          image: '',
+        },
+        {
+          ...character,
+          id: 3,
+          name: 'Rick Sanchez',
+          origin: { name: 'Earth', url: '' },
+          location: { name: 'Citadel of Ricks', url: '' },
+          image: '',
+        },
+      ];
+      rickAndMortyService.getCharactersByPage.mockResolvedValue({
+        info: { count: 3, pages: 1, next: null, prev: null },
+        results: unsortedCharacters,
+      });
+      const result = await service.listCharacters({ page: 1 });
+      expect(result.results.map((item) => item.id)).toEqual([2, 1, 3]);
+      expect(result.results.map((item) => item.name)).toEqual([
+        'morty smith',
+        'Rick Sanchez',
+        'Rick Sanchez',
+      ]);
+    });
     it('should map nextPage and previousPage for a middle page', async () => {
       cacheService.get.mockResolvedValue(undefined);
       rickAndMortyService.getCharactersByPage.mockResolvedValue({
@@ -213,7 +253,7 @@ describe('CharactersService', () => {
         name: 'rick',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:name:rick',
+        'characters:list:v2:page:1:name:rick',
         expect.any(Object),
         3600,
       );
@@ -229,7 +269,7 @@ describe('CharactersService', () => {
         status: 'alive',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:status:alive',
+        'characters:list:v2:page:1:status:alive',
         expect.any(Object),
         3600,
       );
@@ -245,7 +285,7 @@ describe('CharactersService', () => {
         species: 'human',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:species:human',
+        'characters:list:v2:page:1:species:human',
         expect.any(Object),
         3600,
       );
@@ -261,7 +301,7 @@ describe('CharactersService', () => {
         type: 'parasitic',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:type:parasitic',
+        'characters:list:v2:page:1:type:parasitic',
         expect.any(Object),
         3600,
       );
@@ -277,7 +317,7 @@ describe('CharactersService', () => {
         gender: 'male',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:gender:male',
+        'characters:list:v2:page:1:gender:male',
         expect.any(Object),
         3600,
       );
@@ -304,7 +344,7 @@ describe('CharactersService', () => {
         gender: 'male',
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:name:rick:status:alive:species:human:type:parasitic:gender:male',
+        'characters:list:v2:page:1:name:rick:status:alive:species:human:type:parasitic:gender:male',
         expect.any(Object),
         3600,
       );
@@ -329,7 +369,7 @@ describe('CharactersService', () => {
         results: [],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1:name:xyz-no-match',
+        'characters:list:v2:page:1:name:xyz-no-match',
         {
           info: {
             count: 0,
@@ -379,7 +419,7 @@ describe('CharactersService', () => {
       const result = await service.listCharacters({ page: 1 });
       expect(result).toEqual(expectedListPage1);
       expect(cacheService.get).toHaveBeenCalledWith(
-        'characters:list:v1:page:1',
+        'characters:list:v2:page:1',
       );
       expect(rickAndMortyService.getCharactersByPage).not.toHaveBeenCalled();
       expect(cacheService.set).not.toHaveBeenCalled();
@@ -392,7 +432,7 @@ describe('CharactersService', () => {
       const result = await service.listCharacters({ page: 1 });
       expect(result).toEqual(expectedListPage1);
       expect(cacheService.set).toHaveBeenCalledWith(
-        'characters:list:v1:page:1',
+        'characters:list:v2:page:1',
         expectedListPage1,
         3600,
       );
@@ -413,31 +453,31 @@ describe('CharactersService', () => {
       });
       expect(cacheService.set).toHaveBeenNthCalledWith(
         1,
-        'characters:list:v1:page:1',
+        'characters:list:v2:page:1',
         expect.any(Object),
         3600,
       );
       expect(cacheService.set).toHaveBeenNthCalledWith(
         2,
-        'characters:list:v1:page:2',
+        'characters:list:v2:page:2',
         expect.any(Object),
         3600,
       );
       expect(cacheService.set).toHaveBeenNthCalledWith(
         3,
-        'characters:list:v1:page:1:name:rick',
+        'characters:list:v2:page:1:name:rick',
         expect.any(Object),
         3600,
       );
       expect(cacheService.set).toHaveBeenNthCalledWith(
         4,
-        'characters:list:v1:page:1:status:alive',
+        'characters:list:v2:page:1:status:alive',
         expect.any(Object),
         3600,
       );
       expect(cacheService.set).toHaveBeenNthCalledWith(
         5,
-        'characters:list:v1:page:1:name:rick:status:alive',
+        'characters:list:v2:page:1:name:rick:status:alive',
         expect.any(Object),
         3600,
       );

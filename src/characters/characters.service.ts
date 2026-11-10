@@ -140,8 +140,23 @@ export class CharactersService {
         previousPage:
           info.pages > 0 && currentPage > 1 ? currentPage - 1 : null,
       },
-      results: results.map((character) => this.toCharacterResponse(character)),
+      results: this.sortCharactersByName(results).map((character) =>
+        this.toCharacterResponse(character),
+      ),
     };
+  }
+  private sortCharactersByName(
+    characters: RickAndMortyCharacter[],
+  ): RickAndMortyCharacter[] {
+    return [...characters].sort((a, b) => {
+      const byName = a.name.localeCompare(b.name, 'en', {
+        sensitivity: 'base',
+      });
+      if (byName !== 0) {
+        return byName;
+      }
+      return a.id - b.id;
+    });
   }
   private toCharacterResponse(
     character: RickAndMortyCharacter,
@@ -334,7 +349,7 @@ export class CharactersService {
     page: number,
     filters: NormalizedCharacterFilters,
   ): string {
-    const parts = [`characters:list:v1:page:${page}`];
+    const parts = [`characters:list:v2:page:${page}`];
     if (filters.name !== undefined) {
       parts.push(`name:${encodeURIComponent(filters.name)}`);
     }

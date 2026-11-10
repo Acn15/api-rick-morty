@@ -1,5 +1,5 @@
-import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
+// import { CacheModule } from '@nestjs/cache-manager';
 // import { ConfigModule, ConfigService } from '@nestjs/config';
 // import { Logger } from '@nestjs/common';
 import { CacheService } from './cache.service';
@@ -20,36 +20,11 @@ import { CacheService } from './cache.service';
 // }
 
 @Module({
-  imports: [
-    // TEMP Vercel: memória padrão (sem Redis / sem stores: [])
-    CacheModule.register(),
-    // CacheModule.registerAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => {
-    //     const logger = new Logger('RedisCacheModule');
-    //     const redisUrl =
-    //       configService.get<string>('REDIS_URL') ??
-    //       configService.get<string>('KV_URL') ??
-    //       buildRedisUrl(configService);
-    //     if (!redisUrl) {
-    //       return {};
-    //     }
-    //     try {
-    //       const redisStore = createRedisKeyv(redisUrl);
-    //       redisStore.on('error', (error: Error) => {
-    //         logger.warn(`Redis indisponível: ${error.message}`);
-    //       });
-    //       return { stores: [redisStore] };
-    //     } catch (error: unknown) {
-    //       logger.warn(
-    //         `Falha ao iniciar Redis; cache em memória. ${error instanceof Error ? error.message : String(error)}`,
-    //       );
-    //       return {};
-    //     }
-    //   },
-    // }),
-  ],
+  // TEMP Vercel: sem CacheModule/Redis — CacheService usa Map em memória
+  // imports: [
+  //   CacheModule.register(),
+  //   // CacheModule.registerAsync({ ... Redis/Upstash ... }),
+  // ],
   providers: [CacheService],
   exports: [CacheService],
 })

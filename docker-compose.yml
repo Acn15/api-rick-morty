@@ -1,0 +1,150 @@
+x-api-base: &api-base
+  env_file:
+    - .env
+  environment:
+    DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+    REDIS_HOST: ${REDIS_HOST}
+    REDIS_PORT: ${REDIS_PORT:-6379}
+    EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
+  networks:
+    - app_net
+  restart: unless-stopped
+
+x-db-base: &db-base
+  image: postgres:16-alpine
+  env_file:
+    - .env
+  environment:
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  volumes:
+    - pg_data:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+  restart: unless-stopped
+  networks:
+    - app_net
+
+x-redis-base: &redis-base
+  image: redis:7-alpine
+  command: ["redis-server", "--appendonly", "yes"]
+  volumes:
+    - redis_data:/data
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+  restart: unless-stopped
+  networks:
+    - app_net
+
+services:
+  api-dev:
+    <<: *api-base
+    build:
+      context: .
+      target: dev
+    command: sh -c "npm install && npx prisma generate && npm run start:dev"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      REDIS_HOST: ${REDIS_HOST:-redis-dev}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
+      RICK_AND_MORTY_API_BASE_URL: ${RICK_AND_MORTY_API_BASE_URL}
+      NODE_ENV: development
+      DISABLE_CSRF: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    profiles:
+      - dev
+
+  api-staging:
+    <<: *api-base
+    build:
+      context: .
+      target: prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
+      RICK_AND_MORTY_API_BASE_URL: ${RICK_AND_MORTY_API_BASE_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - staging
+
+  api-prod:
+    <<: *api-base
+    build:
+      context: .
+      target: prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      EPISODES_CACHE_TTL_SECONDS: ${EPISODES_CACHE_TTL_SECONDS:-3600}
+      RICK_AND_MORTY_API_BASE_URL: ${RICK_AND_MORTY_API_BASE_URL}
+    ports:
+      - "3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - prod
+
+  db-dev:
+    <<: *db-base
+    ports:
+      - "1515:5432"
+    profiles:
+      - dev
+
+  db:
+    <<: *db-base
+    profiles:
+      - staging
+      - prod
+
+  redis-dev:
+    <<: *redis-base
+    ports:
+      - "${REDIS_PUBLISHED_PORT:-6379}:6379"
+    profiles:
+      - dev
+
+  redis:
+    <<: *redis-base
+    profiles:
+      - staging
+      - prod
+
+networks:
+  app_net:
+
+volumes:
+  pg_data:
+  redis_data:

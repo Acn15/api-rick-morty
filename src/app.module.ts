@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HealthModule } from './health/health.module';
+// import { HealthModule } from './health/health.module';
 // import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 // import { UsersModule } from './users/users.module';
@@ -9,9 +9,9 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
 // import { validateSecuritySecrets } from './config/security-secrets';
-import { RickAndMortyModule } from './integrations/rick-and-morty/rick-and-morty.module';
-import { EpisodesModule } from './episodes/episodes.module';
-import { CharactersModule } from './characters/characters.module';
+// import { RickAndMortyModule } from './integrations/rick-and-morty/rick-and-morty.module';
+// import { EpisodesModule } from './episodes/episodes.module';
+// import { CharactersModule } from './characters/characters.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,14 +19,15 @@ import { CharactersModule } from './characters/characters.module';
       // Auth/Users desligados — não exigir JWT/CSRF no boot
       // validate: validateSecuritySecrets,
     }),
-    HealthModule,
+    // TEMP Vercel: app mínimo para validar deploy (só GET /)
+    // HealthModule,
     // Prisma/Postgres + auth/users desligados (sem DATABASE_URL em produção)
     // PrismaModule,
     // AuthModule,
     // UsersModule,
-    RickAndMortyModule,
-    EpisodesModule,
-    CharactersModule,
+    // RickAndMortyModule,
+    // EpisodesModule,
+    // CharactersModule,
   ],
   controllers: [AppController],
   providers: [

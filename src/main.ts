@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import cookieParser from 'cookie-parser';
+// import cookieParser from 'cookie-parser';
 // import { doubleCsrf } from 'csrf-csrf';
-import compression from 'compression';
-import helmet from 'helmet';
+// import compression from 'compression';
+// import helmet from 'helmet';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 // import { isCsrfEnabled, requireCsrfSecret } from './config/security-secrets';
 function buildCorsOptions(): CorsOptions {
@@ -45,29 +45,31 @@ function buildCorsOptions(): CorsOptions {
   };
 }
 async function bootstrap() {
+  console.log('[boot] starting NestFactory.create');
   const app = await NestFactory.create(AppModule);
-  const isProd = process.env.NODE_ENV === 'production';
+  console.log('[boot] NestFactory.create ok');
   app.enableCors(buildCorsOptions());
-  if (!isProd) {
-    app.use((req, _res, next) => {
-      console.log(
-        `[HTTP] ${req.method} ${req.url} origin=${req.headers.origin ?? '—'}`,
-      );
-      next();
-    });
-  }
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-    }),
-  );
-  app.use(
-    compression({
-      threshold: 1024,
-    }),
-  );
-  app.use(cookieParser());
+  // Middleware pesado comentado para isolar crash na Vercel
+  // if (!isProd) {
+  //   app.use((req, _res, next) => {
+  //     console.log(
+  //       `[HTTP] ${req.method} ${req.url} origin=${req.headers.origin ?? '—'}`,
+  //     );
+  //     next();
+  //   });
+  // }
+  // app.use(
+  //   helmet({
+  //     contentSecurityPolicy: false,
+  //     crossOriginResourcePolicy: { policy: 'cross-origin' },
+  //   }),
+  // );
+  // app.use(
+  //   compression({
+  //     threshold: 1024,
+  //   }),
+  // );
+  // app.use(cookieParser());
   // CSRF desligado junto com Auth/Users (Prisma off)
   // const csrfEnabled = isCsrfEnabled();
   // if (csrfEnabled) {
@@ -87,7 +89,7 @@ async function bootstrap() {
   // } else {
   //   console.warn('⚠ CSRF Protection disabled (development mode)');
   // }
-  console.warn('⚠ CSRF Protection disabled (Auth/Prisma off)');
+  console.warn('⚠ CSRF/helmet/compression disabled (Vercel isolate)');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
@@ -96,7 +98,12 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  // Vercel captura listen(PORT) — NÃO passar host (ex.: 0.0.0.0), senão a function quebra
+  // Vercel captura listen(PORT) — NÃO passar host (ex.: 0.0.0.0)
+  console.log('[boot] calling app.listen');
   await app.listen(process.env.PORT ?? 3000);
+  console.log('[boot] listen ok');
 }
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error('[boot] FATAL', error);
+  throw error;
+});

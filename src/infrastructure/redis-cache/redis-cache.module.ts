@@ -1,6 +1,7 @@
 import { CacheModule } from '@nestjs/cache-manager';
-import { Logger, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+// import { ConfigModule, ConfigService } from '@nestjs/config';
+// import { Logger } from '@nestjs/common';
 import { CacheService } from './cache.service';
 // import { createRedisKeyv } from './create-redis-keyv';
 
@@ -20,39 +21,34 @@ import { CacheService } from './cache.service';
 
 @Module({
   imports: [
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (_configService: ConfigService) => {
-        const logger = new Logger('RedisCacheModule');
-        // TEMP (Vercel): forçar memória para isolar crash do Upstash/rediss
-        logger.warn('Redis desligado temporariamente — cache em memória.');
-        return { stores: [] };
-        // // Vercel/Upstash inject REDIS_URL or KV_URL (rediss://...). Local Docker uses HOST/PORT.
-        // const redisUrl =
-        //   _configService.get<string>('REDIS_URL') ??
-        //   _configService.get<string>('KV_URL') ??
-        //   buildRedisUrl(_configService);
-        // if (!redisUrl) {
-        //   logger.warn(
-        //     'Redis não configurado (REDIS_URL/KV_URL/REDIS_HOST). Cache em memória.',
-        //   );
-        //   return { stores: [] };
-        // }
-        // try {
-        //   const redisStore = createRedisKeyv(redisUrl);
-        //   redisStore.on('error', (error: Error) => {
-        //     logger.warn(`Redis indisponível: ${error.message}`);
-        //   });
-        //   return { stores: [redisStore] };
-        // } catch (error: unknown) {
-        //   logger.warn(
-        //     `Falha ao iniciar Redis; cache em memória. ${error instanceof Error ? error.message : String(error)}`,
-        //   );
-        //   return { stores: [] };
-        // }
-      },
-    }),
+    // TEMP Vercel: memória padrão (sem Redis / sem stores: [])
+    CacheModule.register(),
+    // CacheModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => {
+    //     const logger = new Logger('RedisCacheModule');
+    //     const redisUrl =
+    //       configService.get<string>('REDIS_URL') ??
+    //       configService.get<string>('KV_URL') ??
+    //       buildRedisUrl(configService);
+    //     if (!redisUrl) {
+    //       return {};
+    //     }
+    //     try {
+    //       const redisStore = createRedisKeyv(redisUrl);
+    //       redisStore.on('error', (error: Error) => {
+    //         logger.warn(`Redis indisponível: ${error.message}`);
+    //       });
+    //       return { stores: [redisStore] };
+    //     } catch (error: unknown) {
+    //       logger.warn(
+    //         `Falha ao iniciar Redis; cache em memória. ${error instanceof Error ? error.message : String(error)}`,
+    //       );
+    //       return {};
+    //     }
+    //   },
+    // }),
   ],
   providers: [CacheService],
   exports: [CacheService],
